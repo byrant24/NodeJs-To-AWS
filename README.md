@@ -13,32 +13,36 @@ A project to build, configure and deploy a nodejs application to hello world
 
 - Ansible script 'ansible_deploy_package_ec2_instances.yml' uses the package created by jenkins and deploys it to the ec2 inventory list, unpacks the package and starts the node application.
 
-  ansible-playbook ansible_deploy_package_ec2_instances.yml -vvv
+      ansible-playbook ansible_deploy_package_ec2_instances.yml -vvv
 
   The application is available on {instance.public.ip}:5000
 
 - 'hosts' file maintains the inventroy list of the {ec2.instnaces.publicip} where the application is to be deployed.
-  [node]
-  172.31.24.68 ansible_ssh_user=ubuntu ansible_ssh_private_key_file=ansible_ec2.pem ansible_python_interpreter=/usr/bin/python3
+                        
+      [node]
+      172.31.24.68 ansible_ssh_user=ubuntu ansible_ssh_private_key_file=ansible_ec2.pem ansible_python_interpreter=/usr/bin/python3
 
 
 - 'ansible_ec2.pem' file is the aws ec2 key pair in order to connect.
 
 
+NOTE: Ansible uses python boto framework to provision/configure ec2 instances hence a IAM user credentials are required for       interactions.
+
+      export AWS_ACCESS_KEY_ID="XXXXXXXXXXXXXX"
+      export AWS_SECRET_ACCESS_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+
 - 'ansible_provision_ec2.yml' creates ec2 instnaces with attached security group and tags and writes them to the host inventory file.
+  
+      ansible-playbook ansible_provision_ec2.yml -vvv
 
-  NOTE: Ansible uses python boto framework to provision/configure ec2 instances hence a IAM user credentials are required for       interactions.
+The ansible playbook would write {ec2.instnaces.public.ip} to the hosts file.
 
-  export AWS_ACCESS_KEY_ID="XXXXXXXXXXXXXX"
-  export AWS_SECRET_ACCESS_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      [local]
+      localhost
 
-  ansible-playbook ansible_provision_ec2.yml -vvv
-
-[local]
-localhost
-
-[webserver]
-52.66.151.4
+      [webserver]
+      52.66.151.4
 
 3. Deploy
 
@@ -52,7 +56,7 @@ Parameters - The CF script takes three parameters namely 'owner's email','instan
 
 Scalability - The nodejs Web server behind a load balancer along with an auto scaler.
               
-              New instance would automatically spin up if CPU crosses 90% and shut down if less than 70% for continous 5,10 mins respectively.
+New instance would automatically spin up if CPU crosses 90% and shut down if less than 70% for continous 5,10 mins respectively.
 
 Alerts - Email would be sent out to the creator in case of any auto scaling trigger.
 
