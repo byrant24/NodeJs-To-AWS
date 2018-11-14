@@ -1,4 +1,4 @@
-# ethenahealth_project
+# athenahealth_project
 A project to build, configure and deploy a nodejs application to hello world
 
 1. Build 
