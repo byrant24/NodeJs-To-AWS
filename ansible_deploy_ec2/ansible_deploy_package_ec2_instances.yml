@@ -1,0 +1,40 @@
+---
+- hosts: node
+  sudo: yes
+
+  vars:
+      homeDir: /home/ubuntu
+      appDir : app
+      repo: https://github.com/heroku/node-js-sample.git
+
+  tasks:
+
+  - name: install packages
+    apt: name={{ item }} update_cache=yes state=latest
+    with_items:
+      - git
+      - nodejs
+      - npm
+
+  - name: "Install forever (to run Node.js app)."
+    npm: name=forever global=yes state=present
+
+  - name: create app dir
+    file: path={{homeDir}}/{{appDir}} state=directory
+    register: crtappdir
+
+  - name: transfer nodejs package
+    copy:
+      src: /root/ansible-node/node-js-sample-0.2.0.tgz
+      dest: /home/ubuntu/app/node-js-sample-0.2.0.tgz
+
+  - name: unpack nodejs package
+    command: chdir={{homeDir}}/{{appDir}} npm install node-js-sample-0.2.0.tgz
+
+  - name: "Check list of Node.js apps running."
+    command: forever list
+    register: forever_list
+    changed_when: false
+
+  - name: "Start example Node.js app."
+    command: forever start {{homeDir}}/{{appDir}}/node_modules/node-js-sample/index.js
