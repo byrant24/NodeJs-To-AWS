@@ -1,0 +1,276 @@
+{
+    "Description": "AWS CloudFormation Template to host a sample 'hello-world' nodejs app. AWS CloudFormation Sample Template AutoScalingMultiAZWithNotifications: Create a multi-az, load balanced and Auto Scaled sample node js application running. The application is configured to span all Availability Zones in the region and is Auto-Scaled based on the CPU utilization of the web servers. Notifications will be sent to the operator email address on scaling events. The instances are load balanced with a simple health check against the default web page.The AMI is chosen based on the private AMI's available. Default VPC and subnets are taken which would have access to the internet",
+    "Parameters": {
+       "InstanceType" : {
+			  "Description" : "WebServer EC2 instance type",
+			  "Type" : "String",
+			  "Default" : "t2.micro",
+			  "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"]
+		,
+			  "ConstraintDescription" : "Must be a valid EC2 instance type."
+			},
+        "DeveloperEmail": {
+            "Type": "String",
+            "AllowedPattern": "([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)",
+            "Description": "EMail address to notify if there are any scaling operations"
+        },
+        "KeyName": {
+            "Description": "The EC2 Key Pair to allow SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+        }
+    },
+    "Mappings": {
+        "RegionMap": {
+            "us-east-1": {
+                "AMALINUX": "ami-c481fad3"
+            },
+            "us-east-2": {
+                "AMALINUX": "ami-71ca9114"
+            },
+            "us-west-1": {
+                "AMALINUX": "ami-de347abe"
+            },
+            "us-west-2": {
+                "AMALINUX": "ami-b04e92d0"
+            },
+            "ca-central-1": {
+                "AMALINUX": "ami-eb20928f"
+            },
+            "eu-west-1": {
+                "AMALINUX": "ami-d41d58a7"
+            },
+            "eu-central-1": {
+                "AMALINUX": "ami-0044b96f"
+            },
+            "eu-west-2": {
+                "AMALINUX": "ami-bfe0eadb"
+            },
+            "ap-southeast-1": {
+                "AMALINUX": "ami-7243e611"
+            },
+            "ap-southeast-2": {
+                "AMALINUX": "ami-55d4e436"
+            },
+            "ap-northeast-2": {
+                "AMALINUX": "ami-a04297ce"
+            },
+            "ap-northeast-1": {
+                "AMALINUX": "ami-1a15c77b"
+            },
+            "ap-south-1": {
+                "AMALINUX": "ami-0d773a3b7bb2bb1c1"
+            },
+            "sa-east-1": {
+                "AMALINUX": "ami-b777e4db"
+            }
+        },
+        "InstanceSize": {
+            "SMALL": {
+                "EC2": "t2.micro"
+            },
+            "MEDIUM": {
+                "EC2": "t2.small"
+            },
+            "LARGE": {
+                "EC2": "t2.medium"
+            }
+        }
+    },
+    "Resources": {
+        "NotificationTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Ref": "DeveloperEmail"
+                        },
+                        "Protocol": "email"
+                    }
+                ]
+            }
+        },
+        "WebServerGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": ""
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "MinSize": "1",
+                "MaxSize": "3",
+                "LoadBalancerNames": [
+                    {
+                        "Ref": "ElasticLoadBalancer"
+                    }
+                ],
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "NotificationTopic"
+                    },
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                }
+            }
+        },
+		
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AMALINUX"
+                    ]
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "SecurityGroups": [
+                        {
+                            "Ref": "InstanceSecurityGroup"
+                        }
+                    ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": "#!/bin/bash\nsudo apt-get update -y\nsudo apt-get install git -y\nsudo apt-get install nodejs npm -y\nsudo su\ncd /home/ubuntu\ngit clone https://github.com/heroku/node-js-sample.git\ncd node-js-sample\nnpm install\nnpm start\n"
+                    }
+                }
+            }
+        },
+        "WebServerScaleUpPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "WebServerGroup"
+                },
+                "Cooldown": "1",
+                "ScalingAdjustment": "1"
+            }
+        },
+        "WebServerScaleDownPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "WebServerGroup"
+                },
+                "Cooldown": "60",
+                "ScalingAdjustment": "-1"
+            }
+        },
+        "CPUAlarmHigh": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-up if CPU > 90% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "90",
+                "AlarmActions": [
+                    {
+                        "Ref": "WebServerScaleUpPolicy"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "WebServerGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "CPUAlarmLow": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Scale-down if CPU < 70% for 10 minutes",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Average",
+                "Period": "300",
+                "EvaluationPeriods": "2",
+                "Threshold": "70",
+                "AlarmActions": [
+                    {
+                        "Ref": "WebServerScaleDownPolicy"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "WebServerGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "LessThanThreshold"
+            }
+        },
+        "ElasticLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::GetAZs": ""
+                },
+                "CrossZone": "true",
+                "Listeners": [
+                    {
+                        "LoadBalancerPort": "5000",
+                        "InstancePort": "5000",
+                        "Protocol": "HTTP"
+                    }
+                ],
+                "HealthCheck": {
+                    "Target": "HTTP:5000/",
+                    "HealthyThreshold": "3",
+                    "UnhealthyThreshold": "5",
+                    "Interval": "30",
+                    "Timeout": "5"
+                }
+            }
+        },
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable SSH access and HTTP from the load balancer only",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+					{
+					  "IpProtocol" : "tcp",
+					  "FromPort" : "5000",
+					  "ToPort" : "5000",
+					  "SourceSecurityGroupOwnerId" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.OwnerAlias"]},
+					  "SourceSecurityGroupName" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.GroupName"]}
+					} ]
+            }
+        }
+    },
+	
+	"Outputs": {
+            "URL": {
+                "Description": "The URL of the website",
+                "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}]]}
+			}
+	}
+}
