@@ -38,3 +38,4 @@
 
   - name: "Start example Node.js app."
     command: forever start {{homeDir}}/{{appDir}}/node_modules/node-js-sample/index.js
+    
