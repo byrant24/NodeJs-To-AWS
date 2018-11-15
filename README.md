@@ -6,7 +6,9 @@ A project to build, configure and deploy a nodejs application to hello world
   Impleneted Jenkins to construct a build system to construct a package of the application.
 
   Jenkins url: http://13.127.81.33:8080
-
+  Username: Jenkins
+  Password: Jenkins
+  
   Jenkins job pulls the 'hello-world' node application from githb and construct a easily deployable pakcage of the application using npm   pack.
 
 
