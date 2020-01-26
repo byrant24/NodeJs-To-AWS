@@ -1,13 +1,9 @@
 # Deploy a NodeJs application to AWS using ClouddFormation and Ansible
-A project to build, configure and deploy a nodejs application to hello world
+Cloudformation and Ansible way to build, configure and deploy a nodejs application from scratch.
 
 1. Build 
 
   Impleneted Jenkins to construct a build system to construct a package of the application.
-
-  Jenkins url: http://13.127.81.33:8080
-  Username: Jenkins
-  Password: Jenkins
   
   Jenkins job pulls the 'hello-world' node application from githb and construct a easily deployable pakcage of the application using npm   pack.
 
@@ -73,8 +69,4 @@ NOTE: Ansible uses python boto framework to provision/configure ec2 instances he
   New instance would automatically spin up if CPU crosses 90% and shut down if less than 70% for continous 5,10 mins respectively.
 
   Alerts - Email would be sent out to the creator in case of any auto scaling trigger.
-
-  Working Demo: http://finalstac-elasticl-1uxrdd39rsgxr-824859765.ap-south-1.elb.amazonaws.com:5000/
-
-  AWS Architecture Diagram: https://s3.ap-south-1.amazonaws.com/anmol-nodejs-aws-architect/Web+App+Reference+Architecture+(1).png
 
