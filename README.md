@@ -1,4 +1,4 @@
-# athenahealth project
+# Deploy a NodeJs application to AWS using ClouddFormation and Ansible
 A project to build, configure and deploy a nodejs application to hello world
 
 1. Build 
